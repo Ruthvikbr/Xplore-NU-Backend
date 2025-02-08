@@ -11,6 +11,6 @@ app.use(express.json());
 app.use(cors());
 
 // Routes
-app.use("/api/auth", authRoutes);  // This will be the base route for auth
+app.use("/auth", authRoutes);  // This will be the base route for auth
 
 module.exports = app;
