@@ -4,14 +4,25 @@ const jwt = require("jsonwebtoken");
 
 exports.registerUser = async (req, res) => {
     try {
-        const { firstName, lastName, email, password, role } = req.body;
+        const { firstName, lastName, email, password } = req.body;
 
         // Check if all required fields are provided
-        if (!firstName || !lastName || !email || !password || !role) {
+        if (!firstName || !lastName || !email || !password) {
             return res.status(400).json({ 
-                message: "Missing required fields. Please ensure 'firstName', 'lastName', 'email', 'password', and 'role' are provided."
+                message: "Missing required fields. Please ensure 'firstName', 'lastName', 'email', 'password' are provided."
             });
         }
+
+        // Password validation
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+        if (!passwordRegex.test(password)) {
+            return res.status(400).json({ 
+                message: "Password must be at least 8 characters long, contain at least one letter, one number, and one special character."
+            });
+        }
+
+        // Role based on the email enetered
+        const role = email.endsWith("@northeastern.edu") ? "student" : "visitor";
 
         // Check if user already exists
         const existingUser = await User.findOne({ email });
