@@ -2,6 +2,7 @@ const User = require("../models/user");
 const hashPassword = require("../utils/hashPassword");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { blacklistedTokens } =require( "../middleware/authMiddlewares")
 
 exports.registerUser = async (req, res) => {
     try {
@@ -110,6 +111,20 @@ exports.loginUser = async (req, res) => {
                 name: user.name
             }
         });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+exports.logoutUser = async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        
+        const token = authHeader;
+
+        blacklistedTokens.add(token); 
+        res.json({ message: 'Logged out successfully' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error" });
