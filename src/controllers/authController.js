@@ -171,3 +171,32 @@ exports.forgotPassword = async (req, res) => {
         res.status(500).json({ message: "Error sending OTP. Try again later." });
     }
 };
+
+// Verify OTP
+exports.verifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!otpStore.has(email)) {
+            return res.status(400).json({ message: "No OTP request found. Please request OTP again." });
+        }
+
+        const storedOtpData = otpStore.get(email);
+
+        if (Date.now() > storedOtpData.expiresAt) {
+            otpStore.delete(email);
+            return res.status(400).json({ message: "OTP expired. Please request a new one." });
+        }
+
+        if (storedOtpData.otp !== otp) {
+            return res.status(400).json({ message: "Invalid OTP. Please try again." });
+        }
+
+        // OTP is valid, allow user to reset password
+        otpStore.delete(email);
+        res.status(200).json({ message: "OTP verified successfully. You can now reset your password." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error verifying OTP." });
+    }
+};
