@@ -2,7 +2,11 @@ const User = require("../models/user");
 const hashPassword = require("../utils/hashPassword");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const { blacklistedTokens } =require( "../middleware/authMiddlewares")
+const { blacklistedTokens } =require( "../middleware/authMiddlewares");
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
+
+const otpStore = new Map(); // Store OTPs temporarily
 
 exports.registerUser = async (req, res) => {
     try {
@@ -131,5 +135,116 @@ exports.logoutUser = async (req, res) => {
     }
 };
 
+// Configure Nodemailer Transporter
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
+// Generate OTP and Send Email
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
 
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User with this email does not exist." });
+        }
+
+        const otp = crypto.randomInt(100000, 999999).toString(); // Generate 6-digit OTP
+        otpStore.set(email, { otp, expiresAt: Date.now() + 5 * 60 * 1000 }); // Store OTP for 5 minutes
+
+        // Send OTP to email
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "Password Reset OTP",
+            text: `Your OTP for password reset is ${otp}. It is valid for 5 minutes.`
+        });
+
+        res.status(200).json({ message: "OTP sent to your email." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error sending OTP. Try again later." });
+    }
+};
+
+// Verify OTP
+exports.verifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!otpStore.has(email)) {
+            return res.status(400).json({ message: "No OTP request found. Please request OTP again." });
+        }
+
+        const storedOtpData = otpStore.get(email);
+
+        if (Date.now() > storedOtpData.expiresAt) {
+            otpStore.delete(email);
+            return res.status(400).json({ message: "OTP expired. Please request a new one." });
+        }
+
+        if (storedOtpData.otp !== otp) {
+            return res.status(400).json({ message: "Invalid OTP. Please try again." });
+        }
+
+        // OTP is valid, allow user to reset password
+        otpStore.delete(email);
+        res.status(200).json({ message: "OTP verified successfully. You can now reset your password." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error verifying OTP." });
+    }
+};
+
+// Resend OTP
+exports.resendOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!otpStore.has(email)) {
+            return res.status(400).json({ message: "No OTP request found. Please request OTP again." });
+        }
+
+        const otp = crypto.randomInt(100000, 999999).toString(); // Generate new OTP
+        otpStore.set(email, { otp, expiresAt: Date.now() + 5 * 60 * 1000 }); // Update OTP
+
+        // Send OTP to email
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "Resend OTP for Password Reset",
+            text: `Your new OTP for password reset is ${otp}. It is valid for 5 minutes.`
+        });
+
+        res.status(200).json({ message: "New OTP sent to your email." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error resending OTP. Try again later." });
+    }
+};
+
+// Reset Password after OTP verification
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, newPassword } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User with this email does not exist." });
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: "Password reset successful. You can now log in." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error resetting password." });
+    }
+};
