@@ -227,3 +227,24 @@ exports.resendOtp = async (req, res) => {
         res.status(500).json({ message: "Error resending OTP. Try again later." });
     }
 };
+
+// Reset Password after OTP verification
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, newPassword } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User with this email does not exist." });
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: "Password reset successful. You can now log in." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error resetting password." });
+    }
+};
