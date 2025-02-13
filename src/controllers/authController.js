@@ -200,3 +200,30 @@ exports.verifyOtp = async (req, res) => {
         res.status(500).json({ message: "Error verifying OTP." });
     }
 };
+
+// Resend OTP
+exports.resendOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!otpStore.has(email)) {
+            return res.status(400).json({ message: "No OTP request found. Please request OTP again." });
+        }
+
+        const otp = crypto.randomInt(100000, 999999).toString(); // Generate new OTP
+        otpStore.set(email, { otp, expiresAt: Date.now() + 5 * 60 * 1000 }); // Update OTP
+
+        // Send OTP to email
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "Resend OTP for Password Reset",
+            text: `Your new OTP for password reset is ${otp}. It is valid for 5 minutes.`
+        });
+
+        res.status(200).json({ message: "New OTP sent to your email." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error resending OTP. Try again later." });
+    }
+};
