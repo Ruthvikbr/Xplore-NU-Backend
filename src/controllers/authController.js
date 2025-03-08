@@ -111,8 +111,10 @@ exports.loginUser = async (req, res) => {
             token,
             user: {
                 id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
                 email: user.email,
-                name: user.name
+                role: user.role
             }
         });
     } catch (error) {
