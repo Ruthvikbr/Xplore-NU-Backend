@@ -64,7 +64,17 @@ exports.registerUser = async (req, res) => {
           expiresIn: "1h",
         });
 
-        res.status(201).json({ message: "Account created successfully!", token: token });
+res.status(201).json({ 
+            message: "Account created successfully!", 
+            token: token,
+            user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: user.role
+            }
+        });
     } catch (error) {
         // Log the error for debugging purposes
         console.error(error);
@@ -122,8 +132,10 @@ exports.loginUser = async (req, res) => {
             token,
             user: {
                 id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
                 email: user.email,
-                name: user.name
+                role: user.role
             }
         });
     } catch (error) {
