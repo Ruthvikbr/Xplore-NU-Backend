@@ -15,7 +15,9 @@ exports.registerUser = async (req, res) => {
         // Check if all required fields are provided
         if (!firstName || !lastName || !email || !password) {
             return res.status(400).json({ 
-                message: "Missing required fields. Please ensure 'firstName', 'lastName', 'email', 'password' are provided."
+              message: "Registration was unsuccessful",
+              error:
+                "Missing required fields. Please ensure 'firstName', 'lastName', 'email', 'password' are provided.",
             });
         }
 
@@ -23,7 +25,9 @@ exports.registerUser = async (req, res) => {
         const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
         if (!passwordRegex.test(password)) {
             return res.status(400).json({ 
-                message: "Password must be at least 8 characters long, contain at least one letter, one number, and one special character."
+              message: "Registration was unsuccessful",
+              error:
+                "Password must be at least 8 characters long, contain at least one letter, one number, and one special character.",      
             });
         }
 
@@ -34,7 +38,8 @@ exports.registerUser = async (req, res) => {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ 
-                message: `A user with the email address ${email} is already registered. Please try logging in instead.` 
+              message: "Registration was unsuccessful",
+              error: `You are already registered. Please try logging in instead.`,
             });
         }
 
@@ -53,7 +58,13 @@ exports.registerUser = async (req, res) => {
         // Save the new user
         await newUser.save();
 
-        res.status(201).json({ message: "Account created successfully!" });
+        const user = await User.findOne({ email });
+
+        const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, {
+          expiresIn: "1h",
+        });
+
+        res.status(201).json({ message: "Account created successfully!", token: token });
     } catch (error) {
         // Log the error for debugging purposes
         console.error(error);
