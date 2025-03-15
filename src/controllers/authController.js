@@ -64,7 +64,7 @@ exports.registerUser = async (req, res) => {
           expiresIn: "1h",
         });
 
-        res.status(201).json({ 
+res.status(201).json({ 
             message: "Account created successfully!", 
             token: token,
             user: {
