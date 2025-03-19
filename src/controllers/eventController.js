@@ -53,3 +53,33 @@ exports.createEvent = async (req, res) => {
   }
 };
 
+// Get Upcoming Events
+exports.getUpcomingEvents = async (req, res) => {
+  try {
+    // Get current date at the start of the day
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    // Find all events with date greater than or equal to current date
+    const upcomingEvents = await Event.find({ 
+      date: { $gte: currentDate } 
+    })
+    .sort({ date: 1 }) // Sort by date in ascending order (nearest first)
+    .populate('created_by', 'firstName lastName email') // Optional: populate user info
+    .exec();
+
+    res.status(200).json({ 
+      success: true, 
+      count: upcomingEvents.length,
+      events: upcomingEvents 
+    });
+  } catch (error) {
+    console.error('Error fetching upcoming events:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching upcoming events', 
+      error: error.message 
+    });
+  }
+};
+
