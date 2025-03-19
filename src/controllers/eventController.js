@@ -4,6 +4,9 @@ const mongoose = require('mongoose');
 // Create Event
 exports.createEvent = async (req, res) => {
   try {
+    // Access the authenticated user from the request object
+    const userId = req.user.userId;
+    
     const { name, date, time, location, description, images, building_id } = req.body;
 
      // Validate the images field is not empty and contains valid URLs
@@ -28,7 +31,7 @@ exports.createEvent = async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields. Please ensure all fields are provided.' });
     }
 
-    // Create event
+    // Create event with the user ID of the creator
     const newEvent = new Event({
       name,
       date,
@@ -37,6 +40,7 @@ exports.createEvent = async (req, res) => {
       description,
       images,
       building_id: building_id ? new mongoose.Types.ObjectId(building_id) : null,
+      created_by: userId // Add the user ID who created the event
     });
 
     // Save event to the database

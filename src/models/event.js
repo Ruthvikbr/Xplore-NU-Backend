@@ -27,7 +27,7 @@ const eventSchema = new mongoose.Schema({
     type: [String],  // Array of image URLs
     validate: {
       validator: function (value) {
-        return Array.isArray(value) && value.length <= 10;  // Limit to 6 images
+        return Array.isArray(value) && value.length <= 10;  // Limit to 10 images
       },
       message: 'Only up to 10 images can be associated with the event.',
     },
@@ -36,6 +36,15 @@ const eventSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Building',
     default: null, // Building ID will be optional for now
+  },
+  created_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  created_at: {
+    type: Date,
+    default: Date.now,
   },
 });
 
