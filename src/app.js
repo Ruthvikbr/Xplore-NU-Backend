@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
-const authRoutes = require("./routes/authRoutes");  // Ensure the import is correct
+const authRoutes = require("./routes/authRoutes"); 
+const eventRoutes = require("./routes/eventRoutes");
 require("dotenv").config();
 
 const app = express();
@@ -11,6 +12,7 @@ app.use(express.json());
 app.use(cors());
 
 // Routes
-app.use("/auth", authRoutes);  // This will be the base route for auth
+app.use("/auth", authRoutes); 
+app.use("/event", eventRoutes);
 
 module.exports = app;
