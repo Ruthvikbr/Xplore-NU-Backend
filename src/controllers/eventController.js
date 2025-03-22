@@ -6,6 +6,12 @@ exports.createEvent = async (req, res) => {
   try {
     // Access the authenticated user from the request object
     const userId = req.user.userId;
+    const userRole = req.user.role;
+
+    // Allow only admin to create events
+    if (userRole !== 'admin') {
+      return res.status(403).json({ message: 'Only admin users can create events.' });
+    }
     
     const { name, date, time, location, description, images, building_id } = req.body;
 
@@ -124,7 +130,8 @@ exports.getEventById = async (req, res) => {
 exports.updateEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
-    const userId = req.user.userId; // Authenticated user
+    const userId = req.user.userId;
+    const userRole = req.user.role;
 
     // Validate event ID
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
@@ -137,9 +144,9 @@ exports.updateEvent = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Optional: Check if the current user is the creator of the event
-    if (event.created_by.toString() !== userId) {
-      return res.status(403).json({ message: 'You are not authorized to update this event' });
+    // Allow only admin to update events
+    if (userRole !== 'admin') {
+      return res.status(403).json({ message: 'Only admin users can update events.' });
     }
 
     // Destructure request body
