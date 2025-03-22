@@ -68,16 +68,53 @@ exports.getUpcomingEvents = async (req, res) => {
     .populate('created_by', 'firstName lastName email') // Optional: populate user info
     .exec();
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({  
       count: upcomingEvents.length,
       events: upcomingEvents 
     });
   } catch (error) {
     console.error('Error fetching upcoming events:', error);
+    res.status(500).json({  
+      message: 'Error fetching upcoming events', 
+      error: error.message 
+    });
+  }
+};
+
+// Get Event by ID
+exports.getEventById = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+
+    // Check if the ID is valid
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ 
+        
+        message: 'Invalid event ID format' 
+      });
+    }
+
+    // Find event by ID
+    const event = await Event.findById(eventId)
+      .populate('created_by', 'firstName lastName email')
+      .exec();
+
+    // Check if event exists
+    if (!event) {
+      return res.status(404).json({ 
+        
+        message: 'Event not found' 
+      });
+    }
+
+    res.status(200).json({ 
+      event 
+    });
+  } catch (error) {
+    console.error('Error fetching event by ID:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Error fetching upcoming events', 
+      message: 'Error fetching event details', 
       error: error.message 
     });
   }
