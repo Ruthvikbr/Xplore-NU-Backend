@@ -6,6 +6,12 @@ exports.createEvent = async (req, res) => {
   try {
     // Access the authenticated user from the request object
     const userId = req.user.userId;
+    const userRole = req.user.role;
+
+    // Allow only admin to create events
+    if (userRole !== 'admin') {
+      return res.status(403).json({ message: 'Only admin users can create events.' });
+    }
     
     const { name, date, time, location, description, images, building_id } = req.body;
 
@@ -120,3 +126,59 @@ exports.getEventById = async (req, res) => {
   }
 };
 
+// Update Event
+exports.updateEvent = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+
+    // Validate event ID
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: 'Invalid event ID format' });
+    }
+
+    // Find existing event
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Allow only admin to update events
+    if (userRole !== 'admin') {
+      return res.status(403).json({ message: 'Only admin users can update events.' });
+    }
+
+    // Destructure request body
+    const { name, date, time, location, description, images, building_id } = req.body;
+
+    // Validate images if provided
+    if (images) {
+      if (!Array.isArray(images) || images.length === 0) {
+        return res.status(400).json({ message: "Images cannot be empty" });
+      }
+      for (const image of images) {
+        if (image.trim() === "") {
+          return res.status(400).json({ message: "Image URL cannot be empty" });
+        }
+      }
+    }
+
+    // Update event fields
+    event.name = name || event.name;
+    event.date = date || event.date;
+    event.time = time || event.time;
+    event.location = location || event.location;
+    event.description = description || event.description;
+    event.images = images || event.images;
+    event.building_id = building_id ? new mongoose.Types.ObjectId(building_id) : event.building_id;
+
+    // Save updated event
+    await event.save();
+
+    res.status(200).json({ message: 'Event updated successfully', event });
+  } catch (error) {
+    console.error('Error updating event:', error);
+    res.status(500).json({ message: 'Error updating event', error: error.message });
+  }
+};
