@@ -31,7 +31,7 @@ exports.registerUser = async (req, res) => {
             });
         }
 
-        // Role based on the email enetered
+        // Role based on the email entered
         const role = email.endsWith("@northeastern.edu") ? "student" : "visitor";
 
         // Check if user already exists
@@ -60,13 +60,28 @@ exports.registerUser = async (req, res) => {
 
         const user = await User.findOne({ email });
 
-        const token = jwt.sign({ userId: user._id, email: user.email, role: user.role  }, process.env.JWT_SECRET, {
-          expiresIn: "1h",
-        });
+        // Generate access token
+        const accessToken = jwt.sign(
+            { userId: user._id, email: user.email, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+        
+        // Generate refresh token
+        const refreshToken = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+        
+        // Store refresh token in database
+        user.refreshToken = refreshToken;
+        await user.save();
 
-res.status(201).json({ 
+        res.status(201).json({ 
             message: "Account created successfully!", 
-            token: token,
+            accessToken,
+            refreshToken,
             user: {
                 id: user._id,
                 firstName: user.firstName,
@@ -120,16 +135,28 @@ exports.loginUser = async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        // Generate JWT token
-        const token = jwt.sign(
-            { userId: user._id, email: user.email, role: user.role  },
+        // Generate JWT access token (short-lived)
+        const accessToken = jwt.sign(
+            { userId: user._id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
+        
+        // Generate refresh token (long-lived)
+        const refreshToken = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+        
+        // Store refresh token in database
+        user.refreshToken = refreshToken;
+        await user.save();
 
         res.status(200).json({
             message: "Login successful",
-            token,
+            accessToken,
+            refreshToken,
             user: {
                 id: user._id,
                 firstName: user.firstName,
@@ -150,8 +177,67 @@ exports.logoutUser = async (req, res) => {
         
         const token = authHeader;
 
-        blacklistedTokens.add(token); 
+        // Add the access token to blacklist
+        blacklistedTokens.add(token);
+        
+        // Clear refresh token in database if user ID is available
+        if (req.user && req.user.userId) {
+            await User.findByIdAndUpdate(req.user.userId, { refreshToken: null });
+        }
+        
         res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Refresh Token - generate new access token using refresh token
+exports.refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        // Get the old access token from authorization header
+        const oldAccessToken = req.headers.authorization;
+
+        if (!refreshToken) {
+            return res.status(400).json({ message: "Refresh token is required" });
+        }
+
+        // Verify the refresh token
+        let decoded;
+        try {
+            decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        } catch (error) {
+            return res.status(401).json({ message: "Invalid or expired refresh token" });
+        }
+
+        // Find the user with this refresh token
+        const user = await User.findOne({ 
+            _id: decoded.userId,
+            refreshToken: refreshToken 
+        });
+
+        if (!user) {
+            return res.status(401).json({ message: "Invalid refresh token or user not found" });
+        }
+
+        // Generate a new access token
+        const accessToken = jwt.sign(
+            { userId: user._id, email: user.email, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+
+        // Invalidate the old access token if it exists
+        if (oldAccessToken) {
+            blacklistedTokens.add(oldAccessToken);
+        }
+
+        res.status(200).json({
+            message: "Token refreshed successfully",
+            accessToken
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error" });
