@@ -1,8 +1,32 @@
+/**
+ * @module middleware/authMiddlewares
+ * @description Authentication and authorization middleware functions
+ */
+
 const jwt = require('jsonwebtoken');
+
+/**
+ * Set to store invalidated/blacklisted tokens
+ * @type {Set<string>}
+ */
 const blacklistedTokens = new Set();
 
+/**
+ * Checks if a token has been blacklisted
+ * @function isTokenBlacklisted
+ * @param {string} token - JWT token to check
+ * @returns {boolean} True if token is blacklisted, false otherwise
+ */
 const isTokenBlacklisted = (token) => blacklistedTokens.has(token);
 
+/**
+ * Middleware to authenticate JWT tokens
+ * @function authenticateJWT
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {void}
+ */
 const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers['authorization'];
 

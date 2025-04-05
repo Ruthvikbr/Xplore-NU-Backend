@@ -1,6 +1,22 @@
+/**
+ * @module controllers/buildingController
+ * @description Handles operations related to campus buildings and points of interest
+ */
+
 const Building = require('../models/building');
 
-// Create multiple buildings (admin only)
+/**
+ * Creates multiple building entries (admin only)
+ * @async
+ * @function createBuildings
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - User object from auth middleware
+ * @param {string} req.user.role - User role (must be 'admin')
+ * @param {Object} req.body - Request body
+ * @param {Array<Object>} req.body.buildings - Array of building objects to create
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with created buildings or error message
+ */
 exports.createBuildings = async (req, res) => {
   try {
     const userRole = req.user.role;
@@ -28,7 +44,14 @@ exports.createBuildings = async (req, res) => {
   }
 };
 
-// Fetch ordered POIs (public endpoint)
+/**
+ * Retrieves all points of interest in ordered sequence
+ * @async
+ * @function getPOIs
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with array of POI objects sorted by order field
+ */
 exports.getPOIs = async (req, res) => {
   try {
     const pois = await Building.find({})
