@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { createBuildings, getPOIs } = require('../controllers/buildingController');
+const { createBuildings, getPOIs, getBuildingById } = require('../controllers/buildingController');
 const { authenticateJWT } = require('../middleware/authMiddlewares');
 
 /**
@@ -21,7 +21,10 @@ router.post('/', authenticateJWT, createBuildings);
  * GET /building/pois - Get all points of interest
  * @name GetPOIs
  * @route {GET} /building/pois
+ * @authentication This route requires JWT authentication
  */
 router.get('/pois', getPOIs);
+
+router.get('/:id', authenticateJWT, getBuildingById);
 
 module.exports = router;

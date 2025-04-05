@@ -53,14 +53,30 @@ exports.createBuildings = async (req, res) => {
  * @returns {Object} JSON response with array of POI objects sorted by order field
  */
 exports.getPOIs = async (req, res) => {
-  try {
-    const pois = await Building.find({})
-      .select('building_name lat long pointId order description images')
-      .sort({ order: 1 });
-
-    res.status(200).json({ count: pois.length, pois });
-  } catch (error) {
-    console.error("Error fetching POIs:", error);
-    res.status(500).json({ message: "Error fetching POIs", error: error.message });
-  }
+    try {
+        const pois = await Building.find({}).select('-description -images').sort({ order: 1 });
+    
+        res.status(200).json({ count: pois.length, pois });
+    } catch (error) {
+        console.error("Error fetching POIs:", error);
+        res.status(500).json({ message: "Error fetching POIs", error: error.message });
+    }
 };
+
+// Get building detail by _id (protected)
+exports.getBuildingById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const building = await Building.findById(id).select('building_name lat long pointId order description images');
+    
+        if (!building) {
+            return res.status(404).json({ message: "Building not found for the given ID." });
+        }
+    
+        res.status(200).json({ building });
+    } catch (error) {
+        console.error("Error fetching building detail:", error);
+        res.status(500).json({ message: "Error fetching building detail", error: error.message });
+    }
+};  
