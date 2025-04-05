@@ -1,7 +1,30 @@
+/**
+ * @module controllers/eventController
+ * @description Handles operations related to campus events including creation, retrieval, and updates
+ */
+
 const Event = require('../models/event');
 const mongoose = require('mongoose');
 
-// Create Event
+/**
+ * Creates a new event (admin only)
+ * @async
+ * @function createEvent
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - User object from auth middleware
+ * @param {string} req.user.userId - ID of the authenticated user
+ * @param {string} req.user.role - User role (must be 'admin')
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.name - Event name
+ * @param {string} req.body.date - Event date
+ * @param {string} req.body.time - Event time
+ * @param {string} req.body.location - Event location
+ * @param {string} req.body.description - Event description
+ * @param {Array<string>} req.body.images - Array of image URLs for the event
+ * @param {string} [req.body.building_id] - Optional ID of associated building
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with created event or error message
+ */
 exports.createEvent = async (req, res) => {
   try {
     // Access the authenticated user from the request object
@@ -59,7 +82,14 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-// Get Upcoming Events
+/**
+ * Retrieves upcoming events (all events with date >= current date)
+ * @async
+ * @function getUpcomingEvents
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with array of upcoming events sorted by date
+ */
 exports.getUpcomingEvents = async (req, res) => {
   try {
     // Get current date at the start of the day
@@ -87,7 +117,16 @@ exports.getUpcomingEvents = async (req, res) => {
   }
 };
 
-// Get Event by ID
+/**
+ * Retrieves a specific event by ID
+ * @async
+ * @function getEventById
+ * @param {Object} req - Express request object
+ * @param {Object} req.params - URL parameters
+ * @param {string} req.params.id - Event ID to retrieve
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with event details or error message
+ */
 exports.getEventById = async (req, res) => {
   try {
     const eventId = req.params.id;
@@ -126,7 +165,27 @@ exports.getEventById = async (req, res) => {
   }
 };
 
-// Update Event
+/**
+ * Updates an existing event (admin only)
+ * @async
+ * @function updateEvent
+ * @param {Object} req - Express request object
+ * @param {Object} req.params - URL parameters
+ * @param {string} req.params.id - Event ID to update
+ * @param {Object} req.user - User object from auth middleware
+ * @param {string} req.user.userId - ID of the authenticated user
+ * @param {string} req.user.role - User role (must be 'admin')
+ * @param {Object} req.body - Request body with fields to update
+ * @param {string} [req.body.name] - Updated event name
+ * @param {string} [req.body.date] - Updated event date
+ * @param {string} [req.body.time] - Updated event time
+ * @param {string} [req.body.location] - Updated event location
+ * @param {string} [req.body.description] - Updated event description
+ * @param {Array<string>} [req.body.images] - Updated array of image URLs
+ * @param {string} [req.body.building_id] - Updated ID of associated building
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with updated event or error message
+ */
 exports.updateEvent = async (req, res) => {
   try {
     const eventId = req.params.id;

@@ -1,6 +1,23 @@
+/**
+ * @module models/Event
+ * @description Event model representing campus events and activities
+ */
+
 const mongoose = require('mongoose');
 
-// Event Schema
+/**
+ * Event Schema definition
+ * @typedef {Object} EventSchema
+ * @property {String} name - Event name (required, non-empty)
+ * @property {Date} date - Date when the event will occur (required)
+ * @property {String} time - Time when the event will occur (required)
+ * @property {String} location - Location where the event will be held (required)
+ * @property {String} description - Detailed description of the event (required)
+ * @property {String[]} images - Array of image URLs for the event (up to 10)
+ * @property {mongoose.Schema.Types.ObjectId} building_id - Reference to associated building (optional)
+ * @property {mongoose.Schema.Types.ObjectId} created_by - Reference to user who created the event (required)
+ * @property {Date} created_at - Date when the event was created (default: current time)
+ */
 const eventSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -48,5 +65,9 @@ const eventSchema = new mongoose.Schema({
   },
 });
 
+/**
+ * Event model for managing campus events
+ * @type {mongoose.Model}
+ */
 const Event = mongoose.model('Event', eventSchema);
 module.exports = Event;

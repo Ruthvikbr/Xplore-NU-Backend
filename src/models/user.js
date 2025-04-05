@@ -1,5 +1,20 @@
+/**
+ * @module models/User
+ * @description User model representing system users with authentication details
+ */
+
 const mongoose = require('mongoose');
 
+/**
+ * User Schema definition
+ * @typedef {Object} UserSchema
+ * @property {String} firstName - User's first name (required, non-empty)
+ * @property {String} lastName - User's last name (required, non-empty)
+ * @property {String} email - User's unique email address (required, validated format)
+ * @property {String} password - User's hashed password (required, min 6 chars, contains letter, number, and special char)
+ * @property {String} role - User role (student, visitor, or admin)
+ * @property {String} refreshToken - JWT refresh token for authentication
+ */
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
@@ -56,5 +71,9 @@ const userSchema = new mongoose.Schema({
   }
 });
 
+/**
+ * User model for managing user accounts
+ * @type {mongoose.Model}
+ */
 const User = mongoose.model('User', userSchema);
 module.exports = User;

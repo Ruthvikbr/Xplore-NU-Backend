@@ -1,3 +1,8 @@
+/**
+ * @module app
+ * @description Main Express application setup and configuration
+ */
+
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
@@ -6,6 +11,10 @@ const eventRoutes = require("./routes/eventRoutes");
 const buildingRoutes = require("./routes/buildingRoutes");
 require("dotenv").config();
 
+/**
+ * Express application instance
+ * @type {express.Application}
+ */
 const app = express();
 
 // Middleware

@@ -1,3 +1,8 @@
+/**
+ * @module controllers/authController
+ * @description Handles user authentication operations including registration, login, and password management
+ */
+
 const User = require("../models/user");
 const hashPassword = require("../utils/hashPassword");
 const jwt = require("jsonwebtoken");
@@ -6,8 +11,25 @@ const { blacklistedTokens } =require( "../middleware/authMiddlewares");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
+/**
+ * Store OTPs temporarily for password reset functionality
+ * @type {Map<string, {otp: string, expiresAt: number}>}
+ */
 const otpStore = new Map(); // Store OTPs temporarily
 
+/**
+ * Registers a new user in the system
+ * @async
+ * @function registerUser
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body containing user details
+ * @param {string} req.body.firstName - User's first name
+ * @param {string} req.body.lastName - User's last name
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.password - User's password (must be at least 8 characters with letter, number, and special character)
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with user data and tokens or error message
+ */
 exports.registerUser = async (req, res) => {
     try {
         const { firstName, lastName, email, password } = req.body;
@@ -110,6 +132,14 @@ exports.registerUser = async (req, res) => {
     }
 };
 
+/**
+ * Retrieves all users from the database
+ * @async
+ * @function getAllUsers
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with array of user objects or error message
+ */
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.find(); // Fetch all users from the database
@@ -119,6 +149,17 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
+/**
+ * Authenticates a user and issues JWT tokens
+ * @async
+ * @function loginUser
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body containing login credentials
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.password - User's password
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with user data and tokens or error message
+ */
 exports.loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -171,6 +212,18 @@ exports.loginUser = async (req, res) => {
     }
 };
 
+/**
+ * Logs out a user by invalidating their tokens
+ * @async
+ * @function logoutUser
+ * @param {Object} req - Express request object
+ * @param {Object} req.headers - Request headers
+ * @param {string} req.headers.authorization - JWT access token
+ * @param {Object} req.user - User object populated by auth middleware
+ * @param {string} req.user.userId - User ID
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response confirming logout or error message
+ */
 exports.logoutUser = async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
@@ -192,7 +245,18 @@ exports.logoutUser = async (req, res) => {
     }
 };
 
-// Refresh Token - generate new access token using refresh token
+/**
+ * Generates a new access token using a refresh token
+ * @async
+ * @function refreshToken
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.refreshToken - Valid refresh token
+ * @param {Object} req.headers - Request headers
+ * @param {string} req.headers.authorization - Current access token to invalidate
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with new access token or error message
+ */
 exports.refreshToken = async (req, res) => {
     try {
         const { refreshToken } = req.body;
@@ -244,7 +308,10 @@ exports.refreshToken = async (req, res) => {
     }
 };
 
-// Configure Nodemailer Transporter
+/**
+ * Nodemailer transporter for sending emails
+ * @type {nodemailer.Transporter}
+ */
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -253,7 +320,16 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Generate OTP and Send Email
+/**
+ * Sends a password reset OTP to user's email
+ * @async
+ * @function forgotPassword
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - Email address to send OTP to
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response confirming OTP sent or error message
+ */
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -281,7 +357,17 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// Verify OTP
+/**
+ * Verifies the OTP entered by user
+ * @async
+ * @function verifyOtp
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.otp - OTP entered by user
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response confirming OTP verification or error message
+ */
 exports.verifyOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -310,7 +396,16 @@ exports.verifyOtp = async (req, res) => {
     }
 };
 
-// Resend OTP
+/**
+ * Resends OTP to user's email
+ * @async
+ * @function resendOtp
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - Email address to resend OTP to
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response confirming new OTP sent or error message
+ */
 exports.resendOtp = async (req, res) => {
     try {
         const { email } = req.body;
@@ -337,7 +432,17 @@ exports.resendOtp = async (req, res) => {
     }
 };
 
-// Reset Password after OTP verification
+/**
+ * Resets user's password after OTP verification
+ * @async
+ * @function resetPassword
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.newPassword - New password to set
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response confirming password reset or error message
+ */
 exports.resetPassword = async (req, res) => {
     try {
         const { email, newPassword } = req.body;
